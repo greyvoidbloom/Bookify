@@ -1,7 +1,8 @@
 
 *.json
 *.DS_Store
-
+__pycache__/
+instance/
 # Unit test / coverage reports
 .tox/
 .coverage
