@@ -117,8 +117,7 @@ function showAuthModal() {
 function showMainApp() {
     document.getElementById('authModal').classList.add('hidden');
     const username = typeof state.currentUser === 'object' ? state.currentUser.username : state.currentUser;
-    document.getElementById('currentUser').textContent = `👤 ${username}`;
-    document.getElementById('mobileCurrentUser').textContent = username;
+    document.getElementById('currentUser').textContent = username;
     document.getElementById('userInfo').classList.add('hidden');
     document.getElementById('userInfo').classList.remove('hidden');
     loadBooks();
@@ -157,6 +156,33 @@ function setupEventListeners() {
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
     document.getElementById('mobileLogoutBtn').addEventListener('click', handleLogout);
 
+    // Profile buttons
+    document.getElementById('profileBtn')?.addEventListener('click', openProfilePage);
+    document.getElementById('mobileProfileBtn')?.addEventListener('click', openProfilePage);
+
+    // Logo click to go home
+    document.getElementById('logoBtn')?.addEventListener('click', () => {
+        location.reload();
+    });
+
+    // Add Book button (desktop)
+    document.getElementById('addBookBtn')?.addEventListener('click', openAddBookModal);
+    
+    // Add Book button (mobile)
+    document.getElementById('mobileAddBookBtn')?.addEventListener('click', openAddBookModal);
+
+    // Add Book form submission
+    document.getElementById('confirmAddBookBtn')?.addEventListener('click', addNewBook);
+
+    // Cover image URL preview
+    document.getElementById('addBookCover')?.addEventListener('change', () => {
+        const url = document.getElementById('addBookCover').value;
+        if (url) {
+            document.getElementById('coverImage').src = url;
+            document.getElementById('coverPreview').classList.remove('hidden');
+        }
+    });
+
     // Search functionality
     const searchInput = document.getElementById('search-input');
     const heroSearchInput = document.getElementById('hero-search');
@@ -178,12 +204,29 @@ function setupEventListeners() {
     document.querySelectorAll('.shelf-tab').forEach(tab => {
         tab.addEventListener('click', (e) => {
             document.querySelectorAll('.shelf-tab').forEach(t => {
-                t.classList.remove('border-purple-600', 'text-purple-600');
+                t.classList.remove('border-amber-600', 'text-amber-600');
                 t.classList.add('border-transparent', 'text-gray-600');
             });
-            e.target.classList.add('border-purple-600', 'text-purple-600');
+            e.target.classList.add('border-amber-600', 'text-amber-600');
             state.currentShelfFilter = e.target.dataset.status;
             displayShelfItems();
+        });
+    });
+
+    // Profile tabs
+    document.querySelectorAll('.profile-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            const tabName = e.currentTarget.dataset.tab;
+            document.querySelectorAll('.profile-tab').forEach(t => {
+                t.classList.remove('border-pink-600', 'text-pink-600');
+                t.classList.add('border-transparent', 'text-gray-600', 'dark:text-gray-400');
+            });
+            e.currentTarget.classList.add('border-pink-600', 'text-pink-600');
+            
+            document.querySelectorAll('.profile-tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
         });
     });
 
@@ -325,7 +368,16 @@ async function loadGenres() {
 function displayBooks() {
     const grid = document.getElementById('books-grid');
     if (state.books.length === 0) {
-        grid.innerHTML = '<p class="col-span-full text-center text-gray-500">No books found</p>';
+        grid.innerHTML = `
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-book text-6xl text-amber-300 mb-4"></i>
+                <p class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Sorry! The book you're looking for doesn't exist in our directory yet.</p>
+                <p class="text-gray-600 dark:text-gray-400 mb-6">Wanna add a book?</p>
+                <button onclick="openAddBookModal()" class="btn-primary px-6 py-3 text-white rounded-lg font-semibold hover:shadow-lg transition">
+                    <i class="fas fa-plus mr-2"></i>Add a Book
+                </button>
+            </div>
+        `;
         return;
     }
 
@@ -359,7 +411,7 @@ function setupPagination(totalPages) {
     for (let i = 1; i <= totalPages; i++) {
         const btn = document.createElement('button');
         btn.textContent = i;
-        btn.className = `px-3 py-2 rounded border ${i === state.currentPage ? 'bg-purple-600 text-white' : 'border-gray-300 hover:bg-gray-100'}`;
+        btn.className = `px-3 py-2 rounded border ${i === state.currentPage ? 'bg-amber-600 text-white' : 'border-gray-300 hover:bg-gray-100'}`;
         btn.addEventListener('click', () => {
             state.currentPage = i;
             loadBooks();
@@ -450,23 +502,40 @@ async function openBookModal(bookId) {
 function displayReviews(reviews) {
     const reviewsList = document.getElementById('reviewsList');
     if (reviews.length === 0) {
-        reviewsList.innerHTML = '<p class="text-gray-500">No reviews yet. Be the first to review!</p>';
+        reviewsList.innerHTML = '<p class="text-gray-500 dark:text-gray-400">No reviews yet. Be the first to review!</p>';
         return;
     }
 
+    const username = typeof state.currentUser === 'object' ? state.currentUser.username : state.currentUser;
     const template = document.getElementById('reviewTemplate');
-    reviewsList.innerHTML = reviews.map(review => {
+    const fragments = [];
+    
+    reviews.forEach(review => {
         const clone = template.content.cloneNode(true);
         clone.querySelector('.review-author').textContent = review.reviewer_name;
         clone.querySelector('.review-rating').textContent = review.rating;
         clone.querySelector('.review-comment').textContent = review.comment || '(No comment)';
         clone.querySelector('.review-date').textContent = new Date(review.created_at).toLocaleDateString();
-        return clone;
-    }).reduce((html, clone) => {
-        const temp = document.createElement('div');
-        temp.appendChild(clone);
-        return html + temp.innerHTML;
-    }, '');
+        
+        // Add delete button functionality only for own reviews
+        const deleteBtn = clone.querySelector('.delete-review-btn');
+        if (review.reviewer_name === username) {
+            deleteBtn.style.display = 'inline-block';
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteReview(review.id);
+            });
+        } else {
+            deleteBtn.style.display = 'none';
+        }
+        
+        fragments.push(clone);
+    });
+    
+    reviewsList.innerHTML = '';
+    fragments.forEach(fragment => {
+        reviewsList.appendChild(fragment);
+    });
 }
 
 function openReviewForm() {
@@ -694,4 +763,209 @@ function setupRatingInput(inputId, stateKey) {
     ratingInput.addEventListener('mouseleave', () => {
         updateRatingDisplay(inputId);
     });
+}
+
+// ============ Profile Page Functions ============
+function openProfilePage() {
+    const profilePage = document.getElementById('profilePage');
+    profilePage.classList.remove('hidden');
+    const username = typeof state.currentUser === 'object' ? state.currentUser.username : state.currentUser;
+    document.getElementById('profileUsername').textContent = username;
+    loadProfileData();
+}
+
+function closeProfilePage() {
+    document.getElementById('profilePage').classList.add('hidden');
+}
+
+async function loadProfileData() {
+    try {
+        const shelfResponse = await axios.get(`${API_URL}/journal`);
+        const shelfEntries = shelfResponse.data;
+        
+        // Load reviews for all books
+        const allReviews = [];
+        for (const book of state.books) {
+            const bookResponse = await axios.get(`${API_URL}/books/${book.id}`);
+            if (bookResponse.data.reviews) {
+                const username = typeof state.currentUser === 'object' ? state.currentUser.username : state.currentUser;
+                const userReviews = bookResponse.data.reviews.filter(r => r.reviewer_name === username);
+                userReviews.forEach(review => {
+                    review.book_title = book.title;
+                    review.book_id = book.id;
+                    review.book_cover = book.cover_image;
+                });
+                allReviews.push(...userReviews);
+            }
+        }
+        
+        // Update stats
+        document.getElementById('statTotalBooks').textContent = shelfEntries.length;
+        document.getElementById('statCompleted').textContent = shelfEntries.filter(e => e.status === 'completed').length;
+        document.getElementById('statReading').textContent = shelfEntries.filter(e => e.status === 'reading').length;
+        document.getElementById('statReviews').textContent = allReviews.length;
+        
+        // Display books
+        displayProfileBooks(shelfEntries);
+        // Display reviews
+        displayProfileReviews(allReviews);
+    } catch (error) {
+        console.error('Failed to load profile data:', error);
+    }
+}
+
+function displayProfileBooks(shelfEntries) {
+    const container = document.querySelector('#readingTab .space-y-4');
+    
+    if (shelfEntries.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-book-open"></i>
+                <p class="text-gray-600 dark:text-gray-400">No books on your shelf yet</p>
+                <button onclick="closeProfilePage()" class="mt-4 px-4 py-2 btn-primary text-white rounded-lg">Start Reading</button>
+            </div>
+        `;
+        return;
+    }
+    
+    const statusTexts = { 'want-to-read': 'Want to Read', 'reading': 'Currently Reading', 'completed': 'Completed' };
+    const statusColors = { 'want-to-read': 'bg-blue-100 text-blue-700', 'reading': 'bg-yellow-100 text-yellow-700', 'completed': 'bg-green-100 text-green-700' };
+    
+    const books = shelfEntries.map(entry => {
+        const book = state.books.find(b => b.id === entry.book_id) || {};
+        return `
+            <div class="profile-book-card dark:bg-gray-800 dark:border-gray-700">
+                <img src="${book.cover_image || 'https://via.placeholder.com/80x120?text=No+Image'}" alt="${entry.book_title}" class="profile-book-cover">
+                <div class="profile-book-info">
+                    <h3 class="text-gray-900 dark:text-white">${entry.book_title}</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">${book.author || 'Unknown Author'}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-500 mt-1">${book.genre || 'Unknown Genre'}</p>
+                    ${entry.user_notes ? `<p class="text-sm italic text-gray-600 dark:text-gray-400 mt-2">"${entry.user_notes}"</p>` : ''}
+                    <span class="profile-book-status ${statusColors[entry.status]} dark:bg-gray-700 dark:text-gray-200">${statusTexts[entry.status]}</span>
+                </div>
+                <div class="text-right">
+                    ${entry.rating ? `<div class="text-yellow-500 mb-2"><i class="fas fa-star"></i> ${entry.rating}/5</div>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = books;
+}
+
+function displayProfileReviews(reviews) {
+    const container = document.querySelector('#reviewsTab .space-y-4');
+    
+    if (reviews.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-star"></i>
+                <p class="text-gray-600 dark:text-gray-400">No reviews written yet</p>
+                <button onclick="closeProfilePage()" class="mt-4 px-4 py-2 btn-primary text-white rounded-lg">Leave a Review</button>
+            </div>
+        `;
+        return;
+    }
+    
+    const reviewsHtml = reviews.map(review => `
+        <div class="profile-review-card dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-start justify-between mb-3">
+                <div>
+                    <h4 class="font-bold text-gray-900 dark:text-white">${review.book_title}</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">by ${review.reviewer_name}</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="text-yellow-500"><i class="fas fa-star"></i> ${review.rating}/5</div>
+                    <button class="delete-review-btn text-red-500 hover:text-red-700" onclick="deleteReview(${review.id})">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <p class="text-gray-700 dark:text-gray-300">${review.comment || '(No comment)'}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">${new Date(review.created_at).toLocaleDateString()}</p>
+        </div>
+    `).join('');
+    
+    container.innerHTML = reviewsHtml;
+}
+
+async function deleteReview(reviewId) {
+    if (!confirm('Are you sure you want to delete this review?')) return;
+    
+    try {
+        await axios.delete(`${API_URL}/reviews/${reviewId}`);
+        loadProfileData();
+        // If book modal is open, reload it
+        if (state.currentBookId) {
+            openBookModal(state.currentBookId);
+        }
+    } catch (error) {
+        alert('Failed to delete review');
+        console.error(error);
+    }
+}
+
+// Add Book Modal Functions
+function openAddBookModal() {
+    document.getElementById('addBookModal').classList.remove('hidden');
+    document.getElementById('addBookTitle').focus();
+}
+
+function closeAddBookModal() {
+    document.getElementById('addBookModal').classList.add('hidden');
+    // Clear form
+    document.getElementById('addBookTitle').value = '';
+    document.getElementById('addBookAuthor').value = '';
+    document.getElementById('addBookISBN').value = '';
+    document.getElementById('addBookYear').value = '';
+    document.getElementById('addBookGenre').value = '';
+    document.getElementById('addBookCover').value = '';
+    document.getElementById('addBookDescription').value = '';
+    document.getElementById('coverPreview').classList.add('hidden');
+}
+
+async function addNewBook() {
+    try {
+        const title = document.getElementById('addBookTitle').value.trim();
+        const author = document.getElementById('addBookAuthor').value.trim();
+        const isbn = document.getElementById('addBookISBN').value.trim();
+        const year = document.getElementById('addBookYear').value;
+        const genre = document.getElementById('addBookGenre').value.trim();
+        const coverUrl = document.getElementById('addBookCover').value.trim();
+        const description = document.getElementById('addBookDescription').value.trim();
+
+        // Validation
+        if (!title || !author || !genre || !coverUrl) {
+            alert('Please fill in all required fields (Title, Author, Genre, Cover Image URL)');
+            return;
+        }
+
+        // Create book object
+        const bookData = {
+            title,
+            author,
+            isbn: isbn || null,
+            publication_year: year ? parseInt(year) : null,
+            genre,
+            cover_image: coverUrl,
+            description: description || null,
+            rating: 0 // New books start with no rating
+        };
+
+        // POST to backend
+        const response = await axios.post(`${API_URL}/books`, bookData);
+        
+        if (response.status === 201 || response.status === 200) {
+            alert('Book added successfully!');
+            closeAddBookModal();
+            // Reload books list
+            state.currentPage = 1;
+            state.currentSearch = '';
+            state.currentGenre = '';
+            loadBooks();
+        }
+    } catch (error) {
+        console.error('Error adding book:', error);
+        alert('Failed to add book. Please try again.');
+    }
 }

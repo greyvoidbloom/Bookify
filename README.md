@@ -1,19 +1,33 @@
-# 📚 Bookify
+# 📚 Bookify - Your Personal Book Journal
 
-> Discover, review, and track your reading journey. A beautiful, modern book discovery platform inspired by Goodreads and Fable.
+> Discover, review, track, and journal your reading journey. A beautiful, modern book discovery and reading journal platform with user accounts, dark mode, and community features.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Flask](https://img.shields.io/badge/Flask-2.0+-blue.svg)](https://flask.palletsprojects.com/)
 
 ## ✨ Features
 
-- **🔍 Smart Search** - Find books by title, author, or ISBN instantly
-- **⭐ Community Reviews** - Read authentic reviews from readers and write your own with star ratings
-- **📔 Reading Shelf** - Track your books across "Want to Read", "Currently Reading", and "Completed" statuses
-- **💬 Personal Notes** - Add notes and ratings to your reads
-- **🎨 Beautiful UI** - Modern, responsive design inspired by industry leaders
-- **⚡ Real-time Updates** - Instant feedback on all interactions
-- **🔄 Smart Pagination** - Effortless browsing through large book collections
+### Core Features
+- **🔍 Smart Search** - Find books by title, author, or ISBN instantly with real-time results
+- **⭐ Community Reviews** - Read and write authentic reviews with 5-star ratings
+- **📔 Reading Shelf** - Organize books by status: Want to Read, Currently Reading, Completed
+- **💬 Personal Journal** - Add notes, ratings, and track your reading progress
+- **👤 User Profiles** - Create accounts and maintain your personal reading history
+- **📊 Reading Dashboard** - View your reading statistics (Total Books, Completed, In Progress, Reviews)
+
+### UI/UX Features
+- **🌙 Dark Mode** - Full dark mode support with persistent storage
+- **📱 Responsive Design** - Works beautifully on desktop, tablet, and mobile
+- **⚡ Real-time Updates** - Instant feedback on all user interactions
+- **🎨 Warm, Book-Themed Colors** - Amber and brown gradients perfect for a book journaling app
+- **🔄 Smart Pagination** - Browse through large book collections effortlessly
+
+### Community Features
+- **💬 Community Reviews** - See what other readers think
+- **📚 34 Pre-loaded Books** - Start exploring immediately with a curated collection
+- **✏️ Review Management** - Edit and delete your own reviews anytime
+- **🏷️ Genre Filtering** - Browse by book category
 
 ## 🚀 Quick Start
 
